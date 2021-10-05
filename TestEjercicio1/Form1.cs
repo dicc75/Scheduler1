@@ -25,6 +25,7 @@ namespace TestEjercicio1
             Output output = scheduler.CalculateNextDate(new DateTime(2021,10,4));
 
             this.label1.Text = output.NextExecutionTime.ToString();
+
             this.label2.Text = output.Description.ToString();
         }
 
