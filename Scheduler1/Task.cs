@@ -5,27 +5,63 @@ using System.Globalization;
 
 namespace Scheduler1
 {
-    class Task
+    public class Task
     {
-        private DateTime input;
         private SettingScheduler setting;
-       
-        
-        public Task(DateTime input,
-            SettingScheduler setting)
-            
+
+        public SettingScheduler Setting { get => setting; set => setting = value; }
+
+        public Task(SettingScheduler setting)
         {
-            this.input = input;
-            this.setting = setting;
+            this.Setting = setting;
+        }
+     
+        private DateTime GetNextDate(DateTime input)
+        {
+            DateTime nextDate = this.setting.StartDate;
+
+            switch (Setting.Type)
+            {
+                case TypeSetting.Once:
+                    if (this.setting.Date.HasValue == true &&
+                        this.setting.StartDate.CompareTo(this.setting.Date.Value) < 0)
+                    {
+                        nextDate = this.setting.Date.Value;
+
+                    }
+                    else
+                    {
+                        if (this.setting.StartDate.CompareTo(input) < 0)
+                        {
+                            nextDate = input;
+                        }
+                    }
+                    break;
+                case TypeSetting.Recurring:
+
+                    do
+                    {
+                        nextDate = nextDate.AddDays(this.setting.Every);
+
+                        if (this.setting.EndDate.HasValue == true &&
+                            this.setting.EndDate.Value.CompareTo(nextDate) < 0)
+                        {
+                            throw new Exception("Next date is invalid.");
+                        }
+
+                    } while (nextDate.CompareTo(input) < 1);
+                    break;
+            }
+            return nextDate;
         }
 
-        private string GetDescription(DateTime dateValue)
+        private string GetDescriptionNextDate(DateTime nextDate)
         {
             CultureInfo culture = CultureInfo.CreateSpecificCulture("es-ES");
                         
             string description = "Occurs ";
 
-            switch (this.setting.Type)
+            switch (Setting.Type)
             {
                 case TypeSetting.Once:
                     description += "once";
@@ -38,29 +74,33 @@ namespace Scheduler1
             }
 
             description += ". Schedule will be used on ";
-
-            if (dateValue != null)
+            description += nextDate.ToString("d", culture) + " at " + nextDate.ToString("t", culture);
+            description += " starting on " + this.setting.StartDate.ToString("d", culture) + 
+                    " at " + this.setting.StartDate.ToString("t", culture);
+            if (this.setting.EndDate.HasValue == true)
             {
-                description += dateValue.ToString("d", culture) + 
-                        " at " + dateValue.ToString("t", culture);
+                description += " until " + this.setting.EndDate.Value.ToString("d", culture) + 
+                    " at " + this.setting.EndDate.Value.ToString("t", culture);
             }
-
-            //if (this.startDate != null)
-            //{
-            //    description += " starting on " + DateTime.Parse(this.startDate.ToString()).ToString("d", culture) + 
-            //        " at " + DateTime.Parse(this.startDate.ToString()).ToString("t", culture);
-            //}
 
             return description;
         }
 
-        public Output NextDate()
+        public Output NextDate(DateTime input)
         {
-            //Calculate the next date
-            DateTime nextDate = new DateTime(2022, 1, 1);
+            Output output;
 
+            try
+            {
+                this.setting.Validate(input);
 
-            Output output = new Output(nextDate, this.GetDescription(nextDate).ToString());
+                DateTime nextDate = GetNextDate(input);
+                output = new Output(nextDate, this.GetDescriptionNextDate(nextDate).ToString());
+            }
+            catch (Exception)
+            {
+                throw;
+            }
             return output;
         }
     }
