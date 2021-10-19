@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Globalization;
 
 namespace Scheduler1
@@ -15,50 +13,68 @@ namespace Scheduler1
         {
             this.Setting = setting;
         }
-     
-        private DateTime GetNextDate(DateTime input)
+
+        private DateTime GetNextDateOnce(DateTime input)
         {
-            DateTime nextDate = this.setting.StartDate;
+            DateTime nextDate;
+
+            if (this.setting.Date.HasValue == true)
+            {
+                nextDate = this.setting.Date.Value;
+            }
+            else
+            {
+                nextDate = input;
+            }
+
+            return nextDate;
+        }
+
+        private DateTime GetNextDateRecurring(DateTime input)
+        {
+            DateTime nextDate;
+
+            nextDate = this.setting.StartDate.Value;
+            do
+            {
+                nextDate = nextDate.AddDays(this.setting.Every);
+
+                if (this.setting.EndDate.HasValue == true &&
+                    this.setting.EndDate.Value.CompareTo(nextDate) < 0)
+                {
+                    throw new Exception("NextDate is greater than EndDate.");
+                }
+
+            } while (nextDate.CompareTo(input) < 1);
+
+            return nextDate;
+        }
+
+        public DateTime? GetNextDate(DateTime input)
+        {
+            DateTime? nextDate;
+
+            Validate(input);
 
             switch (Setting.Type)
             {
                 case TypeSetting.Once:
-                    if (this.setting.Date.HasValue == true &&
-                        this.setting.StartDate.CompareTo(this.setting.Date.Value) < 0)
-                    {
-                        nextDate = this.setting.Date.Value;
-
-                    }
-                    else
-                    {
-                        if (this.setting.StartDate.CompareTo(input) < 0)
-                        {
-                            nextDate = input;
-                        }
-                    }
+                    nextDate = GetNextDateOnce(input);
                     break;
                 case TypeSetting.Recurring:
-
-                    do
-                    {
-                        nextDate = nextDate.AddDays(this.setting.Every);
-
-                        if (this.setting.EndDate.HasValue == true &&
-                            this.setting.EndDate.Value.CompareTo(nextDate) < 0)
-                        {
-                            throw new Exception("Next date is invalid.");
-                        }
-
-                    } while (nextDate.CompareTo(input) < 1);
+                    nextDate = GetNextDateRecurring(input);
+                    break;
+                default:
+                    nextDate = null;
                     break;
             }
             return nextDate;
         }
 
-        private string GetDescriptionNextDate(DateTime nextDate)
+        public string GetDescriptionNextDate(DateTime nextDate)
         {
             CultureInfo culture = CultureInfo.CreateSpecificCulture("es-ES");
-                        
+
             string description = "Occurs ";
 
             switch (Setting.Type)
@@ -67,7 +83,8 @@ namespace Scheduler1
                     description += "once";
                     break;
                 case TypeSetting.Recurring:
-                    description += "every day";
+                    if (this.setting.Every == 1) description += "every day";
+                    else description += "every " + this.setting.Every.ToString() + " days"; ;
                     break;
                 default:
                     break;
@@ -75,33 +92,64 @@ namespace Scheduler1
 
             description += ". Schedule will be used on ";
             description += nextDate.ToString("d", culture) + " at " + nextDate.ToString("t", culture);
-            description += " starting on " + this.setting.StartDate.ToString("d", culture) + 
-                    " at " + this.setting.StartDate.ToString("t", culture);
+            if (this.setting.StartDate.HasValue == true)
+            {
+                description += " starting on " + this.setting.StartDate.Value.ToString("d", culture) +
+                    " at " + this.setting.StartDate.Value.ToString("t", culture);
+            }
             if (this.setting.EndDate.HasValue == true)
             {
-                description += " until " + this.setting.EndDate.Value.ToString("d", culture) + 
+                description += " until " + this.setting.EndDate.Value.ToString("d", culture) +
                     " at " + this.setting.EndDate.Value.ToString("t", culture);
             }
+            description += ".";
 
             return description;
         }
 
-        public Output NextDate(DateTime input)
+        private void Validate(DateTime input)
         {
-            Output output;
-
-            try
+            if (this.setting.Enable == false)
             {
-                this.setting.Validate(input);
+                throw new Exception("Setting is disabled.");
+            }
 
-                DateTime nextDate = GetNextDate(input);
-                output = new Output(nextDate, this.GetDescriptionNextDate(nextDate).ToString());
-            }
-            catch (Exception)
+            if (this.setting.StartDate.HasValue == true)
             {
-                throw;
+                if (this.setting.StartDate.Value.CompareTo(input) > 0)
+                {
+                    throw new Exception("StartDate is greater than Input.");
+                }
+
+                if (this.setting.Date.HasValue == true)
+                {
+                    if (this.setting.StartDate.Value.CompareTo(this.setting.Date.Value) > 0)
+                    {
+                        throw new Exception("StartDate is greater than Date.");
+                    }
+                }
             }
-            return output;
+
+            if (this.setting.EndDate.HasValue == true)
+            {
+                if (this.setting.EndDate.Value.CompareTo(input) < 0)
+                {
+                    throw new Exception("Input is greater than EndDate.");
+                }
+
+                if (this.setting.Date.HasValue == true)
+                {
+                    if (this.setting.EndDate.Value.CompareTo(this.setting.Date.Value) < 0)
+                    {
+                        throw new Exception("Date is greater than EndDate.");
+                    }
+                }
+            }
+
+            if (this.setting.Type == TypeSetting.Recurring && this.setting.Every <= 0)
+            {
+                throw new Exception("Every is invalid.");
+            }
         }
     }
 }

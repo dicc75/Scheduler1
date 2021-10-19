@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Scheduler1
+﻿namespace Scheduler1
 {
     public enum TypeSetting
-    { 
+    {
         Once,
         Recurring
     }
@@ -15,5 +11,4 @@ namespace Scheduler1
         //Weekly,
         //Monthly 
     }
-    
 }

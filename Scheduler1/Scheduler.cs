@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Scheduler1
+﻿namespace Scheduler1
 {
     public class Scheduler
     {
