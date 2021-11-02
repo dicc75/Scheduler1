@@ -18,21 +18,21 @@ namespace Scheduler1
         {
             DateTime nextDate;
 
-            if (this.setting.Date.HasValue == true)
-            {
-                nextDate = this.setting.Date.Value;
-            }
-            else
-            {
-                nextDate = input;
-            }
+            ValidateOnce(input);
 
+            nextDate = this.setting.Date.Value;
+        
             return nextDate;
         }
 
         private DateTime GetNextDateRecurring(DateTime input)
         {
             DateTime nextDate;
+
+            ValidateRecurring(input);
+
+            DaysOfWeek dayOfWeek = (DaysOfWeek)input.DayOfWeek;
+
 
             nextDate = this.setting.StartDate.Value;
             do
@@ -42,9 +42,8 @@ namespace Scheduler1
                 if (this.setting.EndDate.HasValue == true &&
                     this.setting.EndDate.Value.CompareTo(nextDate) < 0)
                 {
-                    throw new Exception("NextDate is greater than EndDate.");
+                    throw new ArgumentException($"The NextDate {nextDate} is greater than EndDate {this.setting.EndDate.Value}.");
                 }
-
             } while (nextDate.CompareTo(input) < 1);
 
             return nextDate;
@@ -52,9 +51,7 @@ namespace Scheduler1
 
         public DateTime? GetNextDate(DateTime input)
         {
-            DateTime? nextDate;
-
-            Validate(input);
+            DateTime? nextDate = null;
 
             switch (Setting.Type)
             {
@@ -63,9 +60,6 @@ namespace Scheduler1
                     break;
                 case TypeSetting.Recurring:
                     nextDate = GetNextDateRecurring(input);
-                    break;
-                default:
-                    nextDate = null;
                     break;
             }
             return nextDate;
@@ -111,21 +105,21 @@ namespace Scheduler1
         {
             if (this.setting.Enable == false)
             {
-                throw new Exception("Setting is disabled.");
+                throw new ArgumentException("Setting is disabled.");
             }
 
             if (this.setting.StartDate.HasValue == true)
             {
                 if (this.setting.StartDate.Value.CompareTo(input) > 0)
                 {
-                    throw new Exception("StartDate is greater than Input.");
+                    throw new ArgumentException($"The Input {input} is less than StartDate {this.setting.StartDate.Value}.");
                 }
 
                 if (this.setting.Date.HasValue == true)
                 {
                     if (this.setting.StartDate.Value.CompareTo(this.setting.Date.Value) > 0)
                     {
-                        throw new Exception("StartDate is greater than Date.");
+                        throw new ArgumentException($"The Date {this.setting.Date.Value} is less than StartDate {this.setting.StartDate.Value}."); 
                     }
                 }
             }
@@ -134,22 +128,74 @@ namespace Scheduler1
             {
                 if (this.setting.EndDate.Value.CompareTo(input) < 0)
                 {
-                    throw new Exception("Input is greater than EndDate.");
+                    throw new ArgumentException($"The Input {input} is greater than EndDate {this.setting.EndDate.Value}."); 
                 }
 
                 if (this.setting.Date.HasValue == true)
                 {
                     if (this.setting.EndDate.Value.CompareTo(this.setting.Date.Value) < 0)
                     {
-                        throw new Exception("Date is greater than EndDate.");
+                        throw new ArgumentException($"The Date {this.setting.Date.Value} is greater than EndDate {this.setting.EndDate.Value}."); 
                     }
                 }
             }
+        }
 
-            if (this.setting.Type == TypeSetting.Recurring && this.setting.Every <= 0)
+        private void ValidateOnce(DateTime input)
+        {
+            Validate(input);
+
+            if (this.setting.Type == TypeSetting.Once && this.setting.Date.HasValue == false)
             {
-                throw new Exception("Every is invalid.");
+                throw new ArgumentNullException("Date","The value cannot be null.");
             }
+        }
+
+        private void ValidateRecurring(DateTime input)
+        {
+            Validate(input);
+
+            if (this.setting.Type == TypeSetting.Recurring)
+            {
+                if (this.setting.Every <= 0)
+                {
+                    throw new ArgumentException("Every is invalid.");
+                }
+
+                if (this.setting.DaysOfWeek.HasValue == false)
+                {
+                    throw new ArgumentException("No day of the week has been specified.");
+                }
+
+            }
+        }
+        private DaysOfWeek GetDayOfWeek(DateTime day)
+        {
+            return (DaysOfWeek)Math.Pow(2, (double)day.DayOfWeek);
+        }
+
+        private TimeSpan GetDailyTime(TimeSpan StartTime, DateTime input, TimeSpan EndTime, int every, DailyFrecuencyType type)
+        {
+            TimeSpan time = StartTime;
+
+            do
+            {
+                switch (type)
+                {
+                    case DailyFrecuencyType.Hours:
+                        time.Add(new TimeSpan(every, 0, 0));
+                        break;
+                    case DailyFrecuencyType.Minutes:
+                        time.Add(new TimeSpan(0, every, 0));
+                        break;
+                    case DailyFrecuencyType.Seconds:
+                        time.Add(new TimeSpan(0, 0, every));
+                        break;
+                }
+
+            } while (EndTime.CompareTo(time) > 0 || input.TimeOfDay.CompareTo(time) > 0);
+
+            return time;
         }
     }
 }
