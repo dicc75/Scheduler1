@@ -5,44 +5,29 @@ namespace Scheduler1
 {
     public class SettingScheduler
     {
-        #region Private Properties
-        private TypeSetting type;
-        private Boolean enable;
-        private int every = 0;
-        private DateTime? startDate;
-        private DateTime? endDate;
-        private DateTime? date;
-
-        private DailyFrecuencyType? dailyType;
-        private TimeSpan? dailyStartTime;
-        private TimeSpan? dailyEndTime;
-        
-        private List<DayOfWeek> daysOfWeek;
-        private int dailyFrecuencyEvery = 0;
-        #endregion
-
         #region Public Properties
-        public TypeSetting Type { get => type; set => type = value; }
-        public bool Enable { get => enable; set => enable = value; }
-        public int Every { get => every; set => every = value; }
-        public DateTime? StartDate { get => startDate; set { startDate = value; } }
-        public DateTime? EndDate { get => endDate; set { endDate = value; } }
-        public DateTime? Date { get => date; set { date = value; } }
+        public TypeSetting Type { get; }
+        public bool Enable { get; set; }
+        public int Every { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public DateTime? Date { get; set; }
 
-        public int DailyFrecuencyEvery { get => dailyFrecuencyEvery; set => dailyFrecuencyEvery = value; }
-        public DailyFrecuencyType? DailyType { get => dailyType; set => dailyType = value; }
-        public TimeSpan? DailyStartTime { get => dailyStartTime; set => dailyStartTime = value; }
-        public TimeSpan? DailyEndTime { get => dailyEndTime; set => dailyEndTime = value; }
-        
-        public List<DayOfWeek> DaysOfWeek { get => daysOfWeek; set => daysOfWeek = value; }
+        public int DailyFrecuencyEvery { get; set; }
+        public DailyFrecuencyType? DailyType { get; set; }
+        public TimeSpan? DailyStartTime { get; set; }
+        public TimeSpan? DailyEndTime { get; set; }
+        public TimeSpan? DailyOnceTime { get; set; }
+
+        public List<DayOfWeek> DaysOfWeek { get; set; }
         #endregion
 
         #region Constructor
         public SettingScheduler(TypeSetting type)
         {
-            this.type = type;
-            this.enable = true;
-            this.daysOfWeek = new List<DayOfWeek>();
+            this.Type = type;
+            this.Enable = true;
+            this.DaysOfWeek = new List<DayOfWeek>();
         }
         #endregion
     }
